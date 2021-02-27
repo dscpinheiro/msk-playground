@@ -26,6 +26,11 @@ unzip awscliv2.zip
 su -c "ln -s /usr/local/bin/aws2/aws ~/.local/bin/aws2" -s /bin/sh ec2-user
 
 # Create dirs, get Apache Kafka 2.3.1, 2.4.1 and unpack it
+su -c "mkdir -p kafka231 kafka241 confluent" -s /bin/sh ec2-user
+cd kafka231
+su -c "wget https://archive.apache.org/dist/kafka/2.3.1/kafka_2.12-2.3.1.tgz" -s /bin/sh ec2-user
+su -c "tar -xzf kafka_2.12-2.3.1.tgz --strip 1" -s /bin/sh ec2-user
+
 cd /home/ec2-user
 ln -s /home/ec2-user/kafka241 /home/ec2-user/kafka
 cd kafka241
