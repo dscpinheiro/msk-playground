@@ -26,11 +26,6 @@ unzip awscliv2.zip
 su -c "ln -s /usr/local/bin/aws2/aws ~/.local/bin/aws2" -s /bin/sh ec2-user
 
 # Create dirs, get Apache Kafka 2.3.1, 2.4.1 and unpack it
-su -c "mkdir -p kafka231 kafka241 confluent" -s /bin/sh ec2-user
-cd kafka231
-su -c "wget https://archive.apache.org/dist/kafka/2.3.1/kafka_2.12-2.3.1.tgz" -s /bin/sh ec2-user
-su -c "tar -xzf kafka_2.12-2.3.1.tgz --strip 1" -s /bin/sh ec2-user
-
 cd /home/ec2-user
 ln -s /home/ec2-user/kafka241 /home/ec2-user/kafka
 cd kafka241
@@ -52,7 +47,6 @@ su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/producer.properties_msk /tmp
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/consumer.properties /tmp/kafka" -l ec2-user
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/schema-registry.properties /tmp/kafka" -l ec2-user
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/setup-env-sasl.py /tmp/kafka" -l ec2-user
-su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/connect-distributed_no_security.properties /tmp/kafka" -l ec2-user
 su -c "git -C /tmp/kafka clone https://github.com/aws-samples/sasl-scram-secrets-manager-client-for-msk.git" -l ec2-user
 su -c "cd /tmp/kafka/sasl-scram-secrets-manager-client-for-msk/ && mvn clean install -f pom.xml && cp target/SaslScramSecretsManagerClient-1.0-SNAPSHOT.jar /tmp/kafka" -l ec2-user
 su -c "cd /tmp/kafka && rm -rf sasl-scram-secrets-manager-client-for-msk" -l ec2-user
