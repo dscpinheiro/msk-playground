@@ -83,6 +83,6 @@ su -c "echo '[ -f /tmp/kafka/setup_env ] && . /tmp/kafka/setup_env' >> /home/ec2
 su -c "mkdir -p /home/ec2-user/.aws" -s /bin/sh ec2-user
 su -c "cat > /home/ec2-user/.aws/config<<EOF
 [default]
-region = us-east-1
+region = us-west-2
 EOF" -s /bin/sh ec2-user
 
