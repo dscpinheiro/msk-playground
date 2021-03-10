@@ -80,5 +80,7 @@ export brokers=$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn -
 export brokerstls=$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.BootstrapBrokerStringTls')
 EOF" -s /bin/sh ec2-user
 
+chmod +x /tmp/kafka/setup_env
+
 su -c "echo 'export PS1=\"KafkaClientEC2Instance [\u@\h \W\\]$ \"' >> /home/ec2-user/.bash_profile" -s /bin/sh ec2-user
-su -c "echo '[ -f /tmp/kafka/setup_env ] && . /tmp/kafka/setup_env' >> /home/ec2-user/.bash_profile" -s /bin/sh ec2-user
+
