@@ -72,13 +72,12 @@ region = $region
 EOF" -s /bin/sh ec2-user
 
 # Setup bash env
-su -c "cat > /tmp/kafka/setup_env<<EOF
-export stackname=\$1
-export mskclusterarn=$(aws cloudformation describe-stacks --stack-name \$stackname --region $region | jq --raw-output '.Stacks[0].Outputs[] | select(.OutputKey == "MSKClusterArn") | .OutputValue')
-export zoo=$(aws kafka describe-cluster --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.ClusterInfo.ZookeeperConnectString')
-export brokers=$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.BootstrapBrokerString')
-export brokerstls=$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.BootstrapBrokerStringTls')
-EOF" -s /bin/sh ec2-user
+su -c "echo 'export region=$region' > /tmp/kafka/setup_env" -s /bin/sh ec2-user
+su -c "echo 'export stackname=\$1' >> /tmp/kafka/setup_env" -s /bin/sh ec2-user
+su -c "echo 'export mskclusterarn=\$(aws cloudformation describe-stacks --stack-name \$stackname --region \$region | jq --raw-output '\''.Stacks[0].Outputs[] | select(.OutputKey == "\""MSKClusterArn"\"") | .OutputValue'\'')' >> /tmp/kafka/setup_env" -s /bin/sh ec2-user
+su -c "echo 'export zoo=\$(aws kafka describe-cluster --cluster-arn \$mskclusterarn --region \$region | jq --raw-output '\''.ClusterInfo.ZookeeperConnectString'\'')' >> /tmp/kafka/setup_env" -s /bin/sh ec2-user
+su -c "echo 'export brokers=\$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region \$region | jq --raw-output '\''.BootstrapBrokerString'\'')' >> /tmp/kafka/setup_env" -s /bin/sh ec2-user
+su -c "echo 'export brokerstls=\$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region \$region | jq --raw-output '\''.BootstrapBrokerStringTls'\'')' >> /tmp/kafka/setup_env" -s /bin/sh ec2-user
 
 chmod +x /tmp/kafka/setup_env
 
