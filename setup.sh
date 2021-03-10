@@ -1,13 +1,7 @@
 #!/bin/bash
 yum update -y
-yum install python3.7 -y
-yum install java-1.8.0-openjdk-devel -y
-yum install nmap-ncat -y
-yum install git -y
+yum install python3.7 java-1.8.0-openjdk-devel nmap-ncat git jq maven -y
 yum erase awscli -y
-yum install jq -y
-yum install maven -y
-mvn -version
 amazon-linux-extras install docker -y
 service docker start
 usermod -a -G docker ec2-user
@@ -25,17 +19,14 @@ unzip awscliv2.zip
 ./aws/install -b /usr/local/bin/aws2
 su -c "ln -s /usr/local/bin/aws2/aws ~/.local/bin/aws2" -s /bin/sh ec2-user
 
-# Create dirs, get Apache Kafka 2.3.1, 2.4.1 and unpack it
-su -c "mkdir -p kafka231 kafka241 confluent" -s /bin/sh ec2-user
-cd kafka231
-su -c "wget https://archive.apache.org/dist/kafka/2.3.1/kafka_2.12-2.3.1.tgz" -s /bin/sh ec2-user
-su -c "tar -xzf kafka_2.12-2.3.1.tgz --strip 1" -s /bin/sh ec2-user
+# Create dirs, get Apache Kafka 2.7.0 and unpack it
+su -c "mkdir -p kafka270 confluent" -s /bin/sh ec2-user
 
 cd /home/ec2-user
-ln -s /home/ec2-user/kafka241 /home/ec2-user/kafka
-cd kafka241
-su -c "wget http://archive.apache.org/dist/kafka/2.4.1/kafka_2.12-2.4.1.tgz" -s /bin/sh ec2-user
-su -c "tar -xzf kafka_2.12-2.4.1.tgz --strip 1" -s /bin/sh ec2-user
+ln -s /home/ec2-user/kafka270 /home/ec2-user/kafka
+cd kafka270
+su -c "wget http://archive.apache.org/dist/kafka/2.7.0/kafka_2.12-2.7.0.tgz" -s /bin/sh ec2-user
+su -c "tar -xzf kafka_2.12-2.7.0.tgz --strip 1" -s /bin/sh ec2-user
 
 # Get Confluent Community and unpack it
 cd /home/ec2-user
@@ -51,10 +42,7 @@ su -c "mkdir -p kafka" -s /bin/sh ec2-user
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/producer.properties_msk /tmp/kafka" -l ec2-user
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/consumer.properties /tmp/kafka" -l ec2-user
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/schema-registry.properties /tmp/kafka" -l ec2-user
-su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/setup-env-sasl.py /tmp/kafka" -l ec2-user
-su -c "git -C /tmp/kafka clone https://github.com/aws-samples/sasl-scram-secrets-manager-client-for-msk.git" -l ec2-user
-su -c "cd /tmp/kafka/sasl-scram-secrets-manager-client-for-msk/ && mvn clean install -f pom.xml && cp target/SaslScramSecretsManagerClient-1.0-SNAPSHOT.jar /tmp/kafka" -l ec2-user
-su -c "cd /tmp/kafka && rm -rf sasl-scram-secrets-manager-client-for-msk" -l ec2-user
+
 su -c "git -C /tmp/kafka clone https://github.com/aws-samples/clickstream-producer-for-apache-kafka.git" -l ec2-user
 su -c "cd /tmp/kafka/clickstream-producer-for-apache-kafka/ && mvn clean package -f pom.xml && cp target/KafkaClickstreamClient-1.0-SNAPSHOT.jar /tmp/kafka" -l ec2-user
 su -c "cd /tmp/kafka && rm -rf clickstream-producer-for-apache-kafka" -l ec2-user
@@ -75,14 +63,22 @@ Restart=on-abnormal
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/confluent-schema-registry.service
 
-#setup bash env
-su -c "echo 'export PS1=\"KafkaClientEC2Instance [\u@\h \W\\]$ \"' >> /home/ec2-user/.bash_profile" -s /bin/sh ec2-user
-su -c "echo '[ -f /tmp/kafka/setup_env ] && . /tmp/kafka/setup_env' >> /home/ec2-user/.bash_profile" -s /bin/sh ec2-user
-
-#setup aws Region
+# Setup default AWS region
+region=$(curl http://169.254.169.254/latest/meta-data/placement/region)
 su -c "mkdir -p /home/ec2-user/.aws" -s /bin/sh ec2-user
 su -c "cat > /home/ec2-user/.aws/config<<EOF
 [default]
-region = us-west-2
+region = $region
 EOF" -s /bin/sh ec2-user
 
+# Setup bash env
+su -c "cat > /tmp/kafka/setup_env<<EOF
+export stackname=\$1
+export mskclusterarn=$(aws cloudformation describe-stacks --stack-name \$stackname --region $region | jq --raw-output '.Stacks[0].Outputs[] | select(.OutputKey == "MSKClusterArn") | .OutputValue')
+export zoo=$(aws kafka describe-cluster --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.ClusterInfo.ZookeeperConnectString')
+export brokers=$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.BootstrapBrokerString')
+export brokerstls=$(aws kafka get-bootstrap-brokers --cluster-arn \$mskclusterarn --region $region | jq --raw-output '.BootstrapBrokerStringTls')
+EOF" -s /bin/sh ec2-user
+
+su -c "echo 'export PS1=\"KafkaClientEC2Instance [\u@\h \W\\]$ \"' >> /home/ec2-user/.bash_profile" -s /bin/sh ec2-user
+su -c "echo '[ -f /tmp/kafka/setup_env ] && . /tmp/kafka/setup_env' >> /home/ec2-user/.bash_profile" -s /bin/sh ec2-user
