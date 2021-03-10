@@ -43,6 +43,10 @@ su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/producer.properties_msk /tmp
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/consumer.properties /tmp/kafka" -l ec2-user
 su -c "aws s3 cp s3://reinvent2019-msk-liftandshift/schema-registry.properties /tmp/kafka" -l ec2-user
 
+su -c "git -C /tmp/kafka clone https://github.com/aws-samples/sasl-scram-secrets-manager-client-for-msk.git" -l ec2-user
+su -c "cd /tmp/kafka/sasl-scram-secrets-manager-client-for-msk/ && mvn clean install -f pom.xml && cp target/SaslScramSecretsManagerClient-1.0-SNAPSHOT.jar /tmp/kafka" -l ec2-user
+su -c "cd /tmp/kafka && rm -rf sasl-scram-secrets-manager-client-for-msk" -l ec2-user
+
 su -c "git -C /tmp/kafka clone https://github.com/aws-samples/clickstream-producer-for-apache-kafka.git" -l ec2-user
 su -c "cd /tmp/kafka/clickstream-producer-for-apache-kafka/ && mvn clean package -f pom.xml && cp target/KafkaClickstreamClient-1.0-SNAPSHOT.jar /tmp/kafka" -l ec2-user
 su -c "cd /tmp/kafka && rm -rf clickstream-producer-for-apache-kafka" -l ec2-user
